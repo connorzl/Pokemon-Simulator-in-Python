@@ -1,6 +1,7 @@
 from Attack import *
 from tkinter import *
 from Pokedex import *
+from PokemonAI import PokemonAI
 
 class Application(Frame):
     def __init__(self, master):
@@ -224,6 +225,9 @@ class Application(Frame):
 
     # Creating a method to actually start the battle
     def beginBattle(self):
+        # Initialize the AI
+        self.pokemonAI = PokemonAI(self.cpuPokemon[self.cpuActive], self.cpuPokemon)
+
         # Replacing the blank image with the actual sprites of the appropriate Pokemon
         # Using the user-input string to determine which sprite image to use
         self.sprite1 = PhotoImage(file="Sprites/" + self.userPokemon[self.userActive].name + ".gif")
@@ -291,6 +295,7 @@ class Application(Frame):
                         self.cpuActive = i
                         break
                 self.switchPokemon(False,False)
+                self.pokemonAI.forceSwitch(self.cpuActive)
             else:
                 # both pokemon are still alive
                 self.moveEnt1.delete(0, END)
@@ -308,10 +313,11 @@ class Application(Frame):
 
     # Does the same thing as selectMove1() just with respect to the other Pokemon
     def selectMove2(self):
-        if self.moveStrVar2.get().lower() in self.cpuPokemon[self.cpuActive].moveList:
+        AIAction = self.pokemonAI.selectNextAction(self.userPokemon[self.userActive])
+        if AIAction.actionName == "move":
             self.txtStats.config(state=NORMAL)
             self.txtStats.delete(0.0, END)
-            self.txtStats.insert(0.0, attack(self.moveStrVar2.get(), self.cpuPokemon[self.cpuActive], self.userPokemon[self.userActive]))
+            self.txtStats.insert(0.0, attack(AIAction.getName(), self.cpuPokemon[self.cpuActive], self.userPokemon[self.userActive]))
             self.txtStats.config(state=DISABLED)
 
             # Updating the info for the other Pokemon
@@ -351,13 +357,9 @@ class Application(Frame):
                 self.moveEnt1.config(state=NORMAL)
                 self.moveBtn1.config(state=NORMAL)
         else:
-            # handle switching
-            for i in range(0,len(self.cpuPokemon)):
-                if i != self.cpuActive and self.cpuPokemon[i].isAlive() and self.moveStrVar2.get().lower() == self.cpuPokemon[i].name.lower():
-                    self.cpuActive = i
-                    validPokemon = True
-                    self.switchPokemon(False)
-                    break
+            #  If AI decides to switch to another pokemon
+            self.cpuActive = AIAction.getPokemon()
+            self.switchPokemon(False)
 
     # Completely clears and resets all text fields, buttons, and images to their original state
     def restart(self):

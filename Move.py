@@ -1,6 +1,9 @@
-class Move(object):
+from Action import Action
+
+class Move(Action):
     MOVES_DICTIONARY = {}
     def __init__(self, move):
+        super().__init__("move")
         moveInfo = []
         # Only reading through the file if no information is stored in the Moves Dictionary
         if len(Move.MOVES_DICTIONARY) == 0:

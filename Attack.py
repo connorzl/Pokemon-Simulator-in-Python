@@ -165,5 +165,109 @@ def attack(move, pokemon1, pokemon2):
     # String containing useMove(), damage, and type effectiveness
     return tempMsg
 
+# Will take a move, the attacking Pokemon object, and the defending Pokemon object as input
+# Will only calculate (not perform) the damage of the action
+def calculateDamage(move, pokemon1, pokemon2):
+
+    # Reading "Type Advantages.csv" file to determine type advantages and the damage modifier
+    # Stores the line number in the csv as the key and a list giving information about type advantage for the value
+    fin = open("Type Advantages.csv", 'r')
+    typeDic = {}
+    for line in fin:
+        line = line.strip()
+        typeList = line.split(",")
+        typeDic[typeList[0]] = typeList
+        # This list contains a number in the first position, the attack type in the second, the defending type in the third,
+        # and the appropriate damage multiplier in the fourth
+    fin.close()
+
+    # Making the input string into an actual move object
+    move = Move(move)
+
+    # This modifier is used in damage calculations; it takes into account type advantage and STAB bonus
+    modifier = 1
+
+    # Calculating Type advantages using "Type Advantages.csv" file
+    for key in typeDic:
+        # If the attacking and defending types match up, multiply the modifier by the damage multiplier from the list
+        if typeDic[key][1] == move.type and typeDic[key][2] == pokemon2.type1:
+            modifier *= float(typeDic[key][3])
+
+        # Didn't use elif; Just in case you get a 4x or 0.25x modifier based on double type
+        if typeDic[key][1] == move.type and typeDic[key][2] == pokemon2.type2:
+            modifier *= float(typeDic[key][3])
+
+    # Calculating STAB (Same-type Attack Bonus)
+    if move.type == pokemon1.type1:
+        modifier *= Pokemon.STAB
+
+    elif move.type == pokemon1.type2:
+        modifier *= Pokemon.STAB
+
+    # Damage formula also has a random element
+    modifier *= random.uniform(0.85, 1.0)
+
+
+    # ATK/DEF or SpATK/SpDEF or Status? Using the Pokemon damage formula
+    # If the move is "Physical", the damage formula will take into account attack and defense
+    if move.kind == "Physical":
+        damage = int((((2*pokemon1.getLevel()) + 10)/250 * (pokemon1.battleATK/pokemon2.battleDEF) * move.getPower() + 2) * modifier)
+    # If the move is "Special", the damage formula will take into account special attack and special defense
+    elif move.kind == "Special":
+        damage = int((((2*pokemon1.getLevel()) + 10)/250 * (pokemon1.battleSpATK/pokemon2.battleSpDEF) * move.getPower() + 2) * modifier)
+
+
+    # Stat Changing moves
+    else:
+        # If the move is stat-changing, it does 0 damage and the modifier is set to 1 (so it doesn't return super effective or not very effective)
+        damage = 0
+        modifier = 1
+
+        # Going through each kind of different stat change based on the move type
+        if move.kind == "a-":
+            pass
+
+        elif move.kind == "a+":
+            pass
+
+        elif move.kind == "d+":
+            pass
+
+        elif move.kind == "sa+":
+            pass
+
+        elif move.kind == "sd+":
+            pass
+
+        elif move.kind == "s+":
+            pass
+
+        elif move.kind == "d-":
+            pass
+
+        elif move.kind == "sa-":
+            pass
+
+        elif move.kind == "sd-":
+            pass
+
+        elif move.kind == "s-":
+            pass
+
+    # Super effective, not very effective, or no effect?
+    # Appending the result to tempMsg
+    if modifier < 0.85 and modifier > 0:
+        pass
+
+    elif modifier > 1.5:
+        pass
+
+    elif modifier == 0.0:
+        pass
+
+    return damage
+
+
+
 
 
