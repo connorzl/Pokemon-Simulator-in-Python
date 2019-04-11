@@ -97,6 +97,9 @@ class Pokemon(object):
     def getHP(self):
         return self.__hp
 
+    def getBattleHP(self):
+        return self.battleHP
+
     def getATK(self):
         return self.__atk
 
