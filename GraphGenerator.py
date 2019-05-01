@@ -84,6 +84,60 @@ class PokemonGraph(object):
     def get_initial_state(self):
         return self.initialState
 
+    def end_term_process(self, nextStates):
+        modifiedStates = np.array(deepcopy(nextStates))
+
+        for i in range(len(nextStates)):
+            state = np.array(nextStates[i])
+            modifiedState = deepcopy(state)
+            player1Active = state[0][-1]
+            player2Active = state[1][-1]
+            # Active pokemon loses 5% max HP
+            player1ActiveHP = state[0][player1Active]
+            player2ActiveHP = state[1][player2Active]
+            player1ActiveHP -= 0.05 * self.team1Pokemons[player1Active].getHP()
+            player2ActiveHP -= 0.05 * self.team2Pokemons[player2Active].getHP()
+
+            # if any player's active pokemon dies due to this, automatically switch to first available
+            if player1ActiveHP <= 0:
+                modifiedState[0] = np.array(modifiedState[0])
+                modifiedState[1] = np.array(modifiedState[1])
+                modifiedState[0][player1Active] = 0
+                switchTo = -1
+                for j in range(4):
+                    if modifiedState[0][j] > 0:
+                        modifiedState[0][-1] = j
+                        switchTo = j
+                        break
+                modifiedState[0] = tuple(modifiedState[0])
+                modifiedState[1] = tuple(modifiedState[1])
+                modifiedStates[i] = tuple(modifiedState)
+                #print("Player 1's active pokemon {0} dies due to end of turn. Switched to {1}".format(player1Active,
+                                                                                                      #switchTo))
+
+            if player2ActiveHP <= 0:
+                modifiedState = np.array(modifiedState)
+                modifiedState[0] = np.array(modifiedState[0])
+                modifiedState[1] = np.array(modifiedState[1])
+                modifiedState[1][player2Active] = 0
+                switchTo = -1
+                for j in range(4):
+                    if modifiedState[1][j] > 0:
+                        modifiedState[1][-1] = j
+                        switchTo = j
+                        break
+                modifiedState[0] = tuple(modifiedState[0])
+                modifiedState[1] = tuple(modifiedState[1])
+                modifiedStates[i] = tuple(modifiedState)
+                #print("Player 2's active pokemon {0} dies due to end of turn. Switched to {1}".format(player2Active, switchTo))
+        newModifiedStates = []
+        for i in range(len(modifiedStates)):
+            tmp = tuple(modifiedStates[i])
+            newModifiedStates.append(tmp)
+        modifiedStates = tuple(newModifiedStates)
+        return modifiedStates
+
+
     # Add neighbors of the given state to the graph. Return the new states added
     # Make sure stateToExpand is passed in as tuple
     def expand_state(self, stateToExpand):
@@ -127,6 +181,7 @@ class PokemonGraph(object):
                 for pokemonNum in range(CONSTANTS.Constants.NUM_POKEMON_PER_PLAYER):
                     if pokemonNum == activePokemons[whoseTurn] or (stateToExpand[whoseTurn][pokemonNum] == 0):
                         pokemonToSwitch.remove(pokemonNum)
+                extraCount = 0
                 for j in range(len(pokemonToSwitch)):
                     pokemonToSwitchChosen = pokemonToSwitch[j]
                     modifiedCurrentTeamState = list(deepcopy(stateToExpand[whoseTurn]))
@@ -136,9 +191,16 @@ class PokemonGraph(object):
                     nextStates[4 + j][whoseTurn] = tuple(modifiedCurrentTeamState)
                     nextStates[4 + j][2] = whoseNextTurn
                     nextStates[4 + j] = tuple(nextStates[4 + j])
+                    extraCount += 1
 
-            nextStates = nextStates[:4+j+1]
-            self.pokemonGraph[stateToExpand] = tuple(nextStates)
+            nextStates = nextStates[:4+extraCount]
+
+            # if player 2 (AI)'s turn has finished, every player's active pokemon loses 5% max HP
+            if whoseTurn == 1:
+                processedNextStates = self.end_term_process(nextStates)
+                nextStates = processedNextStates
+            nextStates = tuple(nextStates)
+            self.pokemonGraph[stateToExpand] = nextStates
             return nextStates
 
         # If the current move pokemon is dead, total out edge = numPokemonAlive(switches to the rest alive pokemon)
@@ -154,8 +216,9 @@ class PokemonGraph(object):
             # If all dead, return nothing
             if len(pokemonToSwitch) == 0:
                 print("player {}'s pokemons all dead!".format(whoseTurn))
-                return ("dead")
+                return (["dead"])
 
+            extraCount = 0
             for j in range(len(pokemonToSwitch)):
                 pokemonToSwitchChosen = pokemonToSwitch[j]
                 modifiedCurrentTeamState = list(deepcopy(stateToExpand[whoseTurn]))
@@ -165,9 +228,16 @@ class PokemonGraph(object):
                 nextStates[j][whoseTurn] = tuple(modifiedCurrentTeamState)
                 nextStates[j][2] = whoseNextTurn
                 nextStates[j] = tuple(nextStates[j])
+                extraCount += 1
 
-            nextStates = nextStates[:j+1]
-            self.pokemonGraph[stateToExpand] = tuple(nextStates)
+            nextStates = nextStates[:extraCount]
+
+            # if player 2 (AI)'s turn has finished, every player's active pokemon loses 5% max HP
+            if whoseTurn == 1:
+                processedNextStates = self.end_term_process(nextStates)
+                nextStates = processedNextStates
+            nextStates = tuple(nextStates)
+            self.pokemonGraph[stateToExpand] = nextStates
             return nextStates
 
 def main(team1Pokemons, team2Pokemons, team1ActivatePokemonNum, team2ActivatePokemonNum, whoseTurn):
@@ -186,10 +256,12 @@ def main(team1Pokemons, team2Pokemons, team1ActivatePokemonNum, team2ActivatePok
 
         for popState in popStates:
             nextStates = pokemonGraph.expand_state(popState)
-            if nextStates == ("dead"):
-                np.savez("pokemon_graph_dead_{}.npz".format(str(popCount1)), team1Pokemons=team1Pokemons,
+            if len(nextStates) == 1:
+                print("One possible end")
+                np.savez("/Volumes/U/graphs/pokemon_graph_dead_{}.npz".format(str(popCount1)), team1Pokemons=team1Pokemons,
                         team2Pokemons=team2Pokemons, team1ActivatePokemonNum=team1ActivatePokemonNum,
                         team2ActivatePokemonNum=team2ActivatePokemonNum, whoseTurn=whoseTurn, pokemonGraph=pokemonGraph)
+                continue
             if len(nextStates) == 0:
                 continue
             heap[count] = (count, nextStates)
