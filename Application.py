@@ -226,7 +226,8 @@ class Application(Frame):
     # Creating a method to actually start the battle
     def beginBattle(self):
         # Initialize the AI
-        self.pokemonAI = PokemonAI(self.cpuPokemon[self.cpuActive], self.cpuPokemon)
+        self.pokemonAI1 = PokemonAI(self.userPokemon[self.userActive], self.userPokemon)
+        self.pokemonAI2 = PokemonAI(self.cpuPokemon[self.cpuActive], self.cpuPokemon)
 
         # Replacing the blank image with the actual sprites of the appropriate Pokemon
         # Using the user-input string to determine which sprite image to use
@@ -261,19 +262,20 @@ class Application(Frame):
     # Method takes the user-inputted string and plugs it into the attack function
     # Prints the result of the attack function to the center text box
     def selectMove1(self):
-        if self.moveStrVar1.get().lower() in self.userPokemon[self.userActive].moveList:
+        AIAction = self.pokemonAI1.selectNextAction(self.cpuPokemon[self.cpuActive])
+        if AIAction.actionName == "move":
             self.txtStats.config(state=NORMAL)
             self.txtStats.delete(0.0, END)
-            self.txtStats.insert(0.0, attack(self.moveStrVar1.get(), self.userPokemon[self.userActive], self.cpuPokemon[self.cpuActive]))
+            self.txtStats.insert(0.0, attack(AIAction.getName(), self.userPokemon[self.userActive], self.cpuPokemon[self.cpuActive]))
             self.txtStats.config(state=DISABLED)
-            
-            # Updating the info for both Pokemon after the move has been used
+
+            # Updating the info for the other Pokemon
             self.moveText1.config(state=NORMAL)
             self.moveText2.config(state=NORMAL)
             self.moveText1.delete(0.0, END)
             self.moveText2.delete(0.0, END)
-            self.moveText1.insert(0.0, self.userPokemon[self.userActive].printHP() + "\n" + self.userPokemon[self.userActive].printMoves() + self.printPokemon(True))
-            self.moveText2.insert(0.0, self.cpuPokemon[self.cpuActive].printHP() + "\n" + self.cpuPokemon[self.cpuActive].printMoves() + self.printPokemon(False))
+            self.moveText1.insert(0.0, self.cpuPokemon[self.cpuActive].printHP() + "\n" + self.cpuPokemon[self.cpuActive].printMoves() + self.printPokemon(True))
+            self.moveText2.insert(0.0, self.userPokemon[self.userActive].printHP() + "\n" + self.userPokemon[self.userActive].printMoves() + self.printPokemon(False))
             self.moveText1.config(state=DISABLED)
             self.moveText2.config(state=DISABLED)
 
@@ -283,10 +285,12 @@ class Application(Frame):
                 self.txtStats.insert(END, "\n" + self.cpuPokemon[self.cpuActive].faint())
                 self.txtStats.insert(END, "\nPlay again?")
                 self.txtStats.config(state=DISABLED)
-                self.moveEnt1.delete(0, END)
+                self.moveEnt2.delete(0, END)
                 self.restartBtn.config(state=NORMAL)
-                self.moveBtn1.config(state=DISABLED)
-                self.moveEnt1.config(state=DISABLED)
+                self.moveText1.config(state=DISABLED)
+                self.moveText2.config(state=DISABLED)
+                self.moveEnt2.config(state=DISABLED)
+                self.moveBtn2.config(state=DISABLED)
                 self.battleBtn.config(state=DISABLED)
             elif not self.cpuPokemon[self.cpuActive].isAlive():
                 # other player still has at least 1 more pokemon alive, switch to first alive pokemon
@@ -295,25 +299,21 @@ class Application(Frame):
                         self.cpuActive = i
                         break
                 self.switchPokemon(False,False)
-                self.pokemonAI.forceSwitch(self.cpuActive)
+                self.pokemonAI2.forceSwitch(self.cpuActive)
             else:
-                # both pokemon are still alive
                 self.moveEnt1.delete(0, END)
-                self.moveEnt1.config(state=DISABLED)
-                self.moveBtn1.config(state=DISABLED)
                 self.moveEnt2.config(state=NORMAL)
                 self.moveBtn2.config(state=NORMAL)
+                self.moveEnt1.config(state=DISABLED)
+                self.moveBtn1.config(state=DISABLED)
         else:
-            # handle switching
-            for i in range(0,len(self.userPokemon)):
-                if i != self.userActive and self.userPokemon[i].isAlive() and self.moveStrVar1.get().lower() == self.userPokemon[i].name.lower():
-                    self.userActive = i
-                    self.switchPokemon(True)
-                    break
+            #  If AI decides to switch to another pokemon
+            self.userActive = AIAction.getPokemon()
+            self.switchPokemon(True)
 
     # Does the same thing as selectMove1() just with respect to the other Pokemon
     def selectMove2(self):
-        AIAction = self.pokemonAI.selectNextAction(self.userPokemon[self.userActive])
+        AIAction = self.pokemonAI2.selectNextAction(self.userPokemon[self.userActive])
         if AIAction.actionName == "move":
             self.txtStats.config(state=NORMAL)
             self.txtStats.delete(0.0, END)
@@ -350,6 +350,7 @@ class Application(Frame):
                         self.userActive = i
                         break
                 self.switchPokemon(True,False)
+                self.pokemonAI1.forceSwitch(self.userActive)
             else:
                 self.moveEnt2.delete(0, END)
                 self.moveEnt2.config(state=DISABLED)
