@@ -32,9 +32,11 @@ class Application(Frame):
         self.battleBtn = Button(self, text="Begin Battle", state=DISABLED, command=self.beginBattle)
         self.battleBtn.grid(row=2, column=1)
 
+        master.bind("1", self.selectMove1)
         self.moveBtn1 = Button(self, text="Select Move", state=DISABLED, command=self.selectMove1)
         self.moveBtn1.grid(row=7, column=0)
 
+        master.bind('2', self.selectMove2)
         self.moveBtn2 = Button(self, text="Select Move", state=DISABLED, command=self.selectMove2)
         self.moveBtn2.grid(row=7, column=2)
 
@@ -261,7 +263,7 @@ class Application(Frame):
 
     # Method takes the user-inputted string and plugs it into the attack function
     # Prints the result of the attack function to the center text box
-    def selectMove1(self):
+    def selectMove1(self, event=None):
         AIAction = self.pokemonAI1.selectNextAction(self.cpuPokemon[self.cpuActive])
         if AIAction.actionName == "move":
             self.txtStats.config(state=NORMAL)
@@ -274,8 +276,8 @@ class Application(Frame):
             self.moveText2.config(state=NORMAL)
             self.moveText1.delete(0.0, END)
             self.moveText2.delete(0.0, END)
-            self.moveText1.insert(0.0, self.cpuPokemon[self.cpuActive].printHP() + "\n" + self.cpuPokemon[self.cpuActive].printMoves() + self.printPokemon(True))
-            self.moveText2.insert(0.0, self.userPokemon[self.userActive].printHP() + "\n" + self.userPokemon[self.userActive].printMoves() + self.printPokemon(False))
+            self.moveText1.insert(0.0, self.userPokemon[self.userActive].printHP() + "\n" + self.userPokemon[self.userActive].printMoves() + self.printPokemon(True))
+            self.moveText2.insert(0.0, self.cpuPokemon[self.cpuActive].printHP() + "\n" + self.cpuPokemon[self.cpuActive].printMoves() + self.printPokemon(False))
             self.moveText1.config(state=DISABLED)
             self.moveText2.config(state=DISABLED)
 
@@ -312,7 +314,7 @@ class Application(Frame):
             self.switchPokemon(True)
 
     # Does the same thing as selectMove1() just with respect to the other Pokemon
-    def selectMove2(self):
+    def selectMove2(self, event=None):
         AIAction = self.pokemonAI2.selectNextAction(self.userPokemon[self.userActive])
         if AIAction.actionName == "move":
             self.txtStats.config(state=NORMAL)
