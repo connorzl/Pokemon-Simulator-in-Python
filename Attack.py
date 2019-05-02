@@ -32,6 +32,36 @@ def statMod(statStage):
 
     return multiplier  # This multiplier affects the value of the in-battle stat
 
+def getMultiplier(move, pokemon1, pokemon2):
+    fin = open("Type Advantages.csv", 'r')
+    typeDic = {}
+    for line in fin:
+        line = line.strip()
+        typeList = line.split(",")
+        typeDic[typeList[0]] = typeList
+        # This list contains a number in the first position, the attack type in the second, the defending type in the third,
+        # and the appropriate damage multiplier in the fourth
+    fin.close()
+
+    # Making the input string into an actual move object
+    move = Move(move)
+
+    # This modifier is used in damage calculations; it takes into account type advantage and STAB bonus
+    modifier = 1
+
+    # Calculating Type advantages using "Type Advantages.csv" file
+    for key in typeDic:
+        # If the attacking and defending types match up, multiply the modifier by the damage multiplier from the list
+        if typeDic[key][1] == move.type and typeDic[key][2] == pokemon2.type1:
+            modifier *= float(typeDic[key][3])
+
+        # Didn't use elif; Just in case you get a 4x or 0.25x modifier based on double type
+        if typeDic[key][1] == move.type and typeDic[key][2] == pokemon2.type2:
+            modifier *= float(typeDic[key][3])
+
+    return modifier
+
+
 # Will take a move, the attacking Pokemon object, and the defending Pokemon object as input
 # Will return a string that contains the amount of damage done and the effectiveness of the move
 def attack(move, pokemon1, pokemon2):

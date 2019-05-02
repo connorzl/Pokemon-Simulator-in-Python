@@ -52,6 +52,7 @@ class Pokemon(object):
         self.battleSpATK = self.__spAtk + (0.5*Pokemon.IV) + (0.125*Pokemon.EV) + 5
         self.battleSpDEF = self.__spDef + (0.5*Pokemon.IV) + (0.125*Pokemon.EV) + 5
         self.battleSpeed = self.__speed + (0.5*Pokemon.IV) + (0.125*Pokemon.EV) + 5
+        self.maxHP = self.battleHP
 
         # These variables are used to just hold the values of the original stat for stat modification purposes
         self.originalATK = self.__atk + (0.5*Pokemon.IV) + (0.125*Pokemon.EV) + 5
@@ -96,6 +97,9 @@ class Pokemon(object):
     # Get BASE STAT METHODS
     def getHP(self):
         return self.__hp
+
+    def getMaxHP(self):
+        return self.maxHP
 
     def getBattleHP(self):
         return self.battleHP

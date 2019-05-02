@@ -224,7 +224,6 @@ class Application(Frame):
                 self.moveEnt2.config(state=NORMAL)
                 self.moveBtn2.config(state=NORMAL)
 
-
     # Creating a method to actually start the battle
     def beginBattle(self):
         # Initialize the AI
@@ -264,7 +263,8 @@ class Application(Frame):
     # Method takes the user-inputted string and plugs it into the attack function
     # Prints the result of the attack function to the center text box
     def selectMove1(self, event=None):
-        AIAction = self.pokemonAI1.selectNextAction(self.cpuPokemon[self.cpuActive])
+        #AIAction = self.pokemonAI1.selectNextActionDefensive(self.cpuPokemon[self.cpuActive])
+        AIAction = self.pokemonAI1.selectNextActionOffensive(self.cpuPokemon[self.cpuActive], self.cpuPokemon)
         if AIAction.actionName == "move":
             self.txtStats.config(state=NORMAL)
             self.txtStats.delete(0.0, END)
@@ -312,6 +312,7 @@ class Application(Frame):
             #  If AI decides to switch to another pokemon
             self.userActive = AIAction.getPokemon()
             self.switchPokemon(True)
+            self.pokemonAI1.forceSwitch(self.userActive)
 
     # Does the same thing as selectMove1() just with respect to the other Pokemon
     def selectMove2(self, event=None):
@@ -363,6 +364,7 @@ class Application(Frame):
             #  If AI decides to switch to another pokemon
             self.cpuActive = AIAction.getPokemon()
             self.switchPokemon(False)
+            self.pokemonAI2.forceSwitch(self.cpuActive)
 
     # Completely clears and resets all text fields, buttons, and images to their original state
     def restart(self):

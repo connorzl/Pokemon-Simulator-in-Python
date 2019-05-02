@@ -63,5 +63,135 @@ class PokemonAI(object):
             self.currentPokemon = self.pokemons[pokemonToSwitchIndex]
             return Switch(pokemonToSwitchIndex)
 
+    def selectNextActionDefensive(self, playerCurrentPokemon):
+        # Want to select the edge that has min cost
+        # Cost(action) = max damage could receive in current round + -(max damage could give in current round)
+
+        # Total out edge = 4(moves of current pokemon) + numPokemonAlive(switches to the rest alive pokemon)
+        numRemainingAlivePokemon = 0
+        remainingAliveIndexList = []
+        for pokemonNum in range(Constants.NUM_POKEMON_PER_PLAYER):
+            if self.pokemons[pokemonNum] != self.currentPokemon:
+                if self.pokemons[pokemonNum].isAlive():
+                    numRemainingAlivePokemon += 1
+                    remainingAliveIndexList.append(pokemonNum)
+
+        costList = np.zeros(1 + numRemainingAlivePokemon)
+
+        currTotalHP = 0
+        for pokemonNum in range(Constants.NUM_POKEMON_PER_PLAYER):
+            if self.pokemons[pokemonNum].isAlive():
+                currTotalHP += self.pokemons[pokemonNum].getBattleHP()
+
+        # Calculate what is the max damage AI could receive
+        damageReceivedList = np.array([calculateDamage(playerCurrentPokemon.getMove1().getName(), playerCurrentPokemon, self.currentPokemon),
+                              calculateDamage(playerCurrentPokemon.getMove2().getName(), playerCurrentPokemon, self.currentPokemon),
+                              calculateDamage(playerCurrentPokemon.getMove3().getName(), playerCurrentPokemon, self.currentPokemon),
+                              calculateDamage(playerCurrentPokemon.getMove4().getName(), playerCurrentPokemon, self.currentPokemon)])
+        for i in range(0, len(damageReceivedList)):
+            damageReceivedList[i] = min(damageReceivedList[i], self.currentPokemon.getBattleHP())
+        maxDamageReceived = np.max(damageReceivedList)
+        
+        g = maxDamageReceived
+        heuristic = -(currTotalHP - maxDamageReceived)
+        costList[0] = g + heuristic
+
+        damageReceivedSwitchList = np.zeros(numRemainingAlivePokemon)
+        indexInCostList = 1
+        for index in remainingAliveIndexList:
+            pokemonToSwitch = self.pokemons[index]
+            damageReceivedList = np.array(
+                                [calculateDamage(playerCurrentPokemon.getMove1().getName(), playerCurrentPokemon, pokemonToSwitch),
+                                 calculateDamage(playerCurrentPokemon.getMove2().getName(), playerCurrentPokemon, pokemonToSwitch),
+                                 calculateDamage(playerCurrentPokemon.getMove3().getName(), playerCurrentPokemon, pokemonToSwitch),
+                                 calculateDamage(playerCurrentPokemon.getMove4().getName(), playerCurrentPokemon, pokemonToSwitch)])
+            for i in range(0, len(damageReceivedList)):
+                damageReceivedList[i] = min(damageReceivedList[i], pokemonToSwitch.getBattleHP())
+            
+            maxDamageReceived = np.max(damageReceivedList)
+            g = maxDamageReceived
+            heuristic = -(currTotalHP - maxDamageReceived)
+            costList[indexInCostList] = g + heuristic
+            indexInCostList+=1
+
+        # Select the min cost edge
+        minEdgeIndex = np.argmin(costList)
+        if minEdgeIndex == 0: # If the best action is one of the current pokemon moves
+            
+            # Calculate what is the max damage the AI can do
+            damageGiveList = np.array([calculateDamage(self.currentPokemon.getMove1().getName(), self.currentPokemon, playerCurrentPokemon),
+                          calculateDamage(self.currentPokemon.getMove2().getName(), self.currentPokemon, playerCurrentPokemon),
+                          calculateDamage(self.currentPokemon.getMove3().getName(), self.currentPokemon, playerCurrentPokemon),
+                          calculateDamage(self.currentPokemon.getMove4().getName(), self.currentPokemon, playerCurrentPokemon)])            
+
+            moveOptions = [self.currentPokemon.getMove1(), self.currentPokemon.getMove2(), self.currentPokemon.getMove3(), self.currentPokemon.getMove4()]
+            return moveOptions[np.argmax(damageGiveList)]
+        else: # If the best action is switching
+            offset = minEdgeIndex - 1
+            pokemonToSwitchIndex = remainingAliveIndexList[offset]
+            self.currentPokemon = self.pokemons[pokemonToSwitchIndex]
+            return Switch(pokemonToSwitchIndex)
+
+    def selectNextActionOffensive(self, playerCurrentPokemon, allPlayerPokemon):
+        # Want to select the edge that has min cost
+        # Cost(action) = max damage could receive in current round + -(max damage could give in current round)
+
+        # Total out edge = 4(moves of current pokemon) + numPokemonAlive(switches to the rest alive pokemon)
+        numRemainingAlivePokemon = 0
+        remainingAliveIndexList = []
+        for pokemonNum in range(Constants.NUM_POKEMON_PER_PLAYER):
+            if self.pokemons[pokemonNum] != self.currentPokemon:
+                if self.pokemons[pokemonNum].isAlive():
+                    numRemainingAlivePokemon += 1
+                    remainingAliveIndexList.append(pokemonNum)
+
+        costList = np.zeros(1 + numRemainingAlivePokemon)
+
+        opponentsHPLost = 0
+        for pokemonNum in range(Constants.NUM_POKEMON_PER_PLAYER):
+            opponentsHPLost += (allPlayerPokemon[pokemonNum].getMaxHP() - allPlayerPokemon[pokemonNum].getBattleHP())
+
+        # Calculate what is the max damage the AI can do
+        damageGiveList = np.array([calculateDamage(self.currentPokemon.getMove1().getName(), self.currentPokemon, playerCurrentPokemon),
+                          calculateDamage(self.currentPokemon.getMove2().getName(), self.currentPokemon, playerCurrentPokemon),
+                          calculateDamage(self.currentPokemon.getMove3().getName(), self.currentPokemon, playerCurrentPokemon),
+                          calculateDamage(self.currentPokemon.getMove4().getName(), self.currentPokemon, playerCurrentPokemon)])
+        for i in range(0,len(damageGiveList)):
+            damageGiveList[i] = min(damageGiveList[i], playerCurrentPokemon.getBattleHP())
+        bestMoveIndex = np.argmax(damageGiveList)
+        g = -(np.max(damageGiveList))
+        heuristic = -(opponentsHPLost - g) 
+        costList[0] = g + heuristic
+
+        damageReceivedSwitchList = np.zeros(numRemainingAlivePokemon)
+        indexInCostList = 1
+        for index in remainingAliveIndexList:
+            pokemonToSwitch = self.pokemons[index]
+            damageGivenList = np.array(
+                                [calculateDamage(pokemonToSwitch.getMove1().getName(), pokemonToSwitch, playerCurrentPokemon),
+                                 calculateDamage(pokemonToSwitch.getMove2().getName(), pokemonToSwitch, playerCurrentPokemon),
+                                 calculateDamage(pokemonToSwitch.getMove3().getName(), pokemonToSwitch, playerCurrentPokemon),
+                                 calculateDamage(pokemonToSwitch.getMove4().getName(), pokemonToSwitch, playerCurrentPokemon)])
+            for i in range(0,len(damageGivenList)):
+                damageGivenList[i] = min(damageGivenList[i], playerCurrentPokemon.getBattleHP())
+            g = -(np.max(damageGivenList))
+            heuristic = -opponentsHPLost 
+            costList[indexInCostList] = g + heuristic
+            indexInCostList+=1
+
+        # Select the min cost edge
+        minEdgeIndex = np.argmin(costList)
+        if minEdgeIndex == 0: # If the best action is one of the current pokemon moves
+            moveOptions = [self.currentPokemon.getMove1(), self.currentPokemon.getMove2(), self.currentPokemon.getMove3(), self.currentPokemon.getMove4()]
+            return moveOptions[bestMoveIndex]
+        else: # If the best action is switching
+            offset = minEdgeIndex - 1
+            pokemonToSwitchIndex = remainingAliveIndexList[offset]
+            self.currentPokemon = self.pokemons[pokemonToSwitchIndex]
+            return Switch(pokemonToSwitchIndex)
+
+    def selectNextActionTyping(self, playerCurrentPokemon, allPlayerPokemon):
+        print("TODO")
+
     def forceSwitch(self, pokemonIndex):
         self.currentPokemon = self.pokemons[pokemonIndex]
