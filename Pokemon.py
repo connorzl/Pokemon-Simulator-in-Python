@@ -36,9 +36,6 @@ class Pokemon(object):
         self.type2 = pokemonInfo[3]
 
         # BASE STATS
-        print(self.name)
-        print(self.__id)
-        print(pokemonInfo[4])
         self.__hp = int(pokemonInfo[4])
         self.__atk = int(pokemonInfo[5])
         self.__defense = int(pokemonInfo[6])
