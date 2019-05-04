@@ -93,7 +93,7 @@ class PokemonAI(object):
         maxDamageReceived = np.max(damageReceivedList)
         
         g = maxDamageReceived
-        heuristic = -(currTotalHP - maxDamageReceived)
+        heuristic = -currTotalHP
         costList[0] = g + heuristic
 
         damageReceivedSwitchList = np.zeros(numRemainingAlivePokemon)
@@ -110,7 +110,7 @@ class PokemonAI(object):
             
             maxDamageReceived = np.max(damageReceivedList)
             g = maxDamageReceived
-            heuristic = -(currTotalHP - maxDamageReceived)
+            heuristic = -currTotalHP
             costList[indexInCostList] = g + heuristic
             indexInCostList+=1
 
@@ -147,9 +147,10 @@ class PokemonAI(object):
 
         costList = np.zeros(1 + numRemainingAlivePokemon)
 
-        opponentsHPLost = 0
+        opponentsHPLeft = 0
         for pokemonNum in range(Constants.NUM_POKEMON_PER_PLAYER):
-            opponentsHPLost += (allPlayerPokemon[pokemonNum].getMaxHP() - allPlayerPokemon[pokemonNum].getBattleHP())
+            if allPlayerPokemon[pokemonNum].isAlive():
+                opponentsHPLeft += allPlayerPokemon[pokemonNum].getBattleHP()
 
         # Calculate what is the max damage the AI can do
         damageGiveList = np.array([calculateDamage(self.currentPokemon.getMove1().getName(), self.currentPokemon, playerCurrentPokemon),
@@ -159,8 +160,8 @@ class PokemonAI(object):
         for i in range(0,len(damageGiveList)):
             damageGiveList[i] = min(damageGiveList[i], playerCurrentPokemon.getBattleHP())
         bestMoveIndex = np.argmax(damageGiveList)
-        g = -(np.max(damageGiveList))
-        heuristic = -(opponentsHPLost - g) 
+        g = playerCurrentPokemon.getBattleHP() - np.max(damageGiveList))
+        heuristic = opponentsHPLeft
         costList[0] = g + heuristic
 
         damageReceivedSwitchList = np.zeros(numRemainingAlivePokemon)
@@ -174,8 +175,8 @@ class PokemonAI(object):
                                  calculateDamage(pokemonToSwitch.getMove4().getName(), pokemonToSwitch, playerCurrentPokemon)])
             for i in range(0,len(damageGivenList)):
                 damageGivenList[i] = min(damageGivenList[i], playerCurrentPokemon.getBattleHP())
-            g = -(np.max(damageGivenList))
-            heuristic = -opponentsHPLost 
+            g = playerCurrentPokemon.getBattleHP() - np.max(damageGivenList)
+            heuristic = opponentsHPLeft 
             costList[indexInCostList] = g + heuristic
             indexInCostList+=1
 
@@ -243,7 +244,7 @@ class PokemonAI(object):
                 maxDamageDealt = np.max(damageGiveList)
 
                 # to incentivize staying in, skip current pokemon if you can kill it
-                if aiPoke == self.currentPokemon and oppPoke.getBattleHP() - maxDamageDealt <= 0:
+                if oppPoke.getBattleHP() - maxDamageDealt <= 0:
                     continue
 
                 oppMultiplierList = np.array([getMultiplier(oppPoke.getMove1().getName(), oppPoke, aiPoke),
