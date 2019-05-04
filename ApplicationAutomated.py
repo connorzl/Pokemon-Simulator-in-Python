@@ -2,6 +2,8 @@ from Attack import *
 from tkinter import *
 from Pokedex import *
 from PokemonAI import PokemonAI
+from CONSTANTS import Constants
+import numpy as np
 
 class ApplicationAutomated(Frame):
     def __init__(self, master):
@@ -22,6 +24,8 @@ class ApplicationAutomated(Frame):
         self.sprite2Label = Label(self, image=tempImg)
         self.sprite2Label.image = tempImg
         self.sprite2Label.grid(row=3, column=2)
+
+        self.currTurn = 0
 
     # Creating a method to print the list of all Pokemon
     def seePokedex(self):
@@ -117,9 +121,15 @@ class ApplicationAutomated(Frame):
         print()
         self.battleBtn.config(state=DISABLED)
         # Pokemon Objects
-        self.userPokemonNames = ["bulbasaur", "squirtle", "charmander", "pikachu"]
+
+        pokemons = []
+        for i in range(Constants.NUM_POKEMON_PER_PLAYER):
+            index = int(np.random.uniform(0, len(pokedex)))
+            pokemons.append(pokedex[index])
+
+        self.userPokemonNames = pokemons
         self.userActive = 0;
-        self.cpuPokemonNames = ["bulbasaur", "squirtle", "charmander", "pikachu"]
+        self.cpuPokemonNames = pokemons
         self.cpuActive = 0;
         self.userPokemon = []
         self.cpuPokemon = []
@@ -130,6 +140,7 @@ class ApplicationAutomated(Frame):
         # Initialize the AI
         self.pokemonAI1 = PokemonAI(self.userPokemon[self.userActive], self.userPokemon)
         self.pokemonAI2 = PokemonAI(self.cpuPokemon[self.cpuActive], self.cpuPokemon)
+        self.currTurn = 0
 
         # Replacing the blank image with the actual sprites of the appropriate Pokemon
         # Using the user-input string to determine which sprite image to use
@@ -147,8 +158,10 @@ class ApplicationAutomated(Frame):
     # Method takes the user-inputted string and plugs it into the attack function
     # Prints the result of the attack function to the center text box
     def selectMove1(self, event=None):
+        self.currTurn += 1
         AIAction = self.pokemonAI1.selectNextActionDefensive(self.cpuPokemon[self.cpuActive])
         #AIAction = self.pokemonAI1.selectNextActionOffensive(self.cpuPokemon[self.cpuActive], self.cpuPokemon)
+        #AIAction = self.pokemonAI1.selectNextActionTyping(self.cpuPokemon[self.cpuActive], self.cpuPokemon)
         if AIAction.actionName == "move":
             # self.txtStats.config(state=NORMAL)
             # self.txtStats.delete(0.0, END)
@@ -193,6 +206,7 @@ class ApplicationAutomated(Frame):
 
                 print("Player 1 wins!")
                 print("--- A game has ended! ---")
+                print("Number of Turns: " + str(self.currTurn))
                 print()
                 return
 
@@ -225,26 +239,14 @@ class ApplicationAutomated(Frame):
 
     # Does the same thing as selectMove1() just with respect to the other Pokemon
     def selectMove2(self, event=None):
+        self.currTurn += 1
         AIAction = self.pokemonAI2.selectNextAction(self.userPokemon[self.userActive])
         if AIAction.actionName == "move":
-            # self.txtStats.config(state=NORMAL)
-            # self.txtStats.delete(0.0, END)
-            # self.txtStats.insert(0.0, attack(AIAction.getName(), self.cpuPokemon[self.cpuActive], self.userPokemon[self.userActive]))
-            # self.txtStats.config(state=DISABLED)
             tmpMessage = attack(AIAction.getName(), self.cpuPokemon[self.cpuActive], self.userPokemon[self.userActive])
             print("Player 2's move!")
             print()
             print(tmpMessage)
             print()
-            # Updating the info for the other Pokemon
-            # self.moveText1.config(state=NORMAL)
-            # self.moveText2.config(state=NORMAL)
-            # self.moveText1.delete(0.0, END)
-            # self.moveText2.delete(0.0, END)
-            # self.moveText1.insert(0.0, self.userPokemon[self.userActive].printHP() + "\n" + self.userPokemon[self.userActive].printMoves() + self.printPokemon(True))
-            # self.moveText2.insert(0.0, self.cpuPokemon[self.cpuActive].printHP() + "\n" + self.cpuPokemon[self.cpuActive].printMoves() + self.printPokemon(False))
-            # self.moveText1.config(state=DISABLED)
-            # self.moveText2.config(state=DISABLED)
 
             tmpMessage = self.userPokemon[self.userActive].printHP() + "\n" + self.userPokemon[self.userActive].printMoves() + self.printPokemon(True)
             print(tmpMessage)
@@ -254,17 +256,6 @@ class ApplicationAutomated(Frame):
             print()
             # if the other player loses, end the game
             if not self.alive(True):
-                # self.txtStats.config(state=NORMAL)
-                # self.txtStats.insert(END, "\n" + self.userPokemon[self.userActive].faint())
-                # self.txtStats.insert(END, "\nPlay again?")
-                # self.txtStats.config(state=DISABLED)
-                # self.moveEnt2.delete(0, END)
-                # self.restartBtn.config(state=NORMAL)
-                # self.moveText1.config(state=DISABLED)
-                # self.moveText2.config(state=DISABLED)
-                # self.moveEnt2.config(state=DISABLED)
-                # self.moveBtn2.config(state=DISABLED)
-                # self.battleBtn.config(state=DISABLED)
                 self.battleBtn.config(state=NORMAL)
 
                 tmpMessage = self.userPokemon[self.userActive].faint()
@@ -272,6 +263,7 @@ class ApplicationAutomated(Frame):
 
                 print("Player 2 wins!")
                 print("--- A game has ended! ---")
+                print("Number of Turns: " + str(self.currTurn))
                 print()
                 return
 
@@ -285,12 +277,6 @@ class ApplicationAutomated(Frame):
                 self.switchPokemon(True,False)
                 self.pokemonAI1.forceSwitch(self.userActive)
                 print("Replaced with {0}.".format(self.userPokemon[self.userActive].getName()))
-            # else:
-            #     self.moveEnt2.delete(0, END)
-            #     self.moveEnt2.config(state=DISABLED)
-            #     self.moveBtn2.config(state=DISABLED)
-            #     self.moveEnt1.config(state=NORMAL)
-            #     self.moveBtn1.config(state=NORMAL)
         else:
             #  If AI decides to switch to another pokemon
             print("Player 2 takes back {0}".format(self.cpuPokemon[self.cpuActive].getName()))
@@ -299,7 +285,57 @@ class ApplicationAutomated(Frame):
             self.pokemonAI2.forceSwitch(self.cpuActive)
             print("Player 2 calls up {0}.".format(self.cpuPokemon[self.cpuActive].getName()))
 
-        # Turn switch to player 1
+
+        # deduct 1 hp from both current pokemon
+        self.userPokemon[self.userActive].loseHP(1)
+        self.cpuPokemon[self.cpuActive].loseHP(1)
+
+        # for player 1
+        if not self.alive(True):
+            self.battleBtn.config(state=NORMAL)
+
+            tmpMessage = self.userPokemon[self.userActive].faint()
+            print(tmpMessage)
+
+            print("Player 2 wins!")
+            print("--- A game has ended! ---")
+            print("Number of Turns: " + str(self.currTurn))
+            print()
+            return
+        elif not self.userPokemon[self.userActive].isAlive():
+            print("Player 1's {0} faints!".format(self.userPokemon[self.userActive].getName()))
+            # other player still has at least 1 more pokemon alive, switch to first alive pokemon
+            for i in range(0,len(self.userPokemon)):
+                if self.userPokemon[i].isAlive():
+                    self.userActive = i
+                    break
+            self.switchPokemon(True,False)
+            self.pokemonAI1.forceSwitch(self.userActive)
+            print("Replaced with {0}.".format(self.userPokemon[self.userActive].getName()))
+        
+        # for player 2
+        if not self.alive(False):
+            self.battleBtn.config(state=NORMAL)
+
+            tmpMessage = self.cpuPokemon[self.cpuActive].faint()
+            print(tmpMessage)
+
+            print("Player 1 wins!")
+            print("--- A game has ended! ---")
+            print("Number of Turns: " + str(self.currTurn))
+            print()
+            return
+        elif not self.cpuPokemon[self.cpuActive].isAlive():
+            print("Player 2's {0} faints!".format(self.cpuPokemon[self.cpuActive].getName()))
+            # other player still has at least 1 more pokemon alive, switch to first alive pokemon
+            for i in range(0,len(self.cpuPokemon)):
+                if self.cpuPokemon[i].isAlive():
+                    self.cpuActive = i
+                    break
+            self.switchPokemon(True,False)
+            self.pokemonAI2.forceSwitch(self.cpuActive)
+            print("Replaced with {0}.".format(self.cpuPokemon[self.cpuActive].getName()))
+
         self.selectMove1()
 
 
