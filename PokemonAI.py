@@ -63,7 +63,7 @@ class PokemonAI(object):
             self.currentPokemon = self.pokemons[pokemonToSwitchIndex]
             return Switch(pokemonToSwitchIndex)
 
-    def selectNextActionDefensive(self, playerCurrentPokemon):
+    def selectNextActionDefensive(self, playerCurrentPokemon, allPlayerPokemon):
         # Want to select the edge that has min cost
         # Cost(action) = max damage could receive in current round + -(max damage could give in current round)
 
@@ -100,7 +100,7 @@ class PokemonAI(object):
             if not(aiPoke.isAlive()):
                 continue
 
-            heuristic = 0
+            maxDamageTaken = 0
             for oppPoke in allPlayerPokemon:
                 if not(oppPoke.isAlive()):
                     continue
@@ -116,28 +116,42 @@ class PokemonAI(object):
                 if oppPoke.getBattleHP() - maxDamageDealt <= 0:
                     continue
 
-                oppMultiplierList = np.array([getMultiplier(oppPoke.getMove1().getName(), oppPoke, aiPoke),
-                                getMultiplier(oppPoke.getMove2().getName(), oppPoke, aiPoke),
-                                getMultiplier(oppPoke.getMove3().getName(), oppPoke, aiPoke),
-                                getMultiplier(oppPoke.getMove4().getName(), oppPoke, aiPoke)])
-                maxOppMultiplier = np.max(oppMultiplierList)
+                 # Calculate what is the max damage AI could receive
+                damageReceivedList = np.array([calculateDamage(oppPoke.getMove1().getName(), oppPoke, aiPoke),
+                                    calculateDamage(oppPoke.getMove2().getName(), oppPoke, aiPoke),
+                                    calculateDamage(oppPoke.getMove3().getName(), oppPoke, aiPoke),
+                                    calculateDamage(oppPoke.getMove4().getName(), oppPoke, aiPoke)])
+                for i in range(0, len(damageReceivedList)):
+                    damageReceivedList[i] = min(damageReceivedList[i], aiPoke.getBattleHP())
 
-                aiMultiplierList = np.array([getMultiplier(aiPoke.getMove1().getName(), aiPoke, oppPoke),
-                                getMultiplier(aiPoke.getMove2().getName(), aiPoke, oppPoke),
-                                getMultiplier(aiPoke.getMove3().getName(), aiPoke, oppPoke),
-                                getMultiplier(aiPoke.getMove4().getName(), aiPoke, oppPoke)])
-                maxAIMultiplier = np.max(aiMultiplierList)
+                maxDamageTaken = max(maxDamageTaken, np.max(damageReceivedList))
 
-                diff = maxAIMultiplier - maxOppMultiplier
-                if diff >= 1.0:
-                    heuristic += 1.0
-                elif (0 >= diff and diff < 1.0):
-                    heuristic += 2.0
-                else:
-                    heuristic += 4.0
+            maxHeuristicCurr += maxDamageTaken
 
-            minHeuristicCurr = min(minHeuristicCurr, heuristic)
-        costList[0] = g + heuristic
+        costList[0] = g + maxHeuristicCurr
+
+        maxHeuristicRest = 0
+         # compute heuristic
+        for aiPoke in self.pokemons:
+            if not(aiPoke.isAlive()):
+                continue
+
+            maxDamageTaken = 0
+            for oppPoke in allPlayerPokemon:
+                if not(oppPoke.isAlive()):
+                    continue
+
+                 # Calculate what is the max damage AI could receive
+                damageReceivedList = np.array([calculateDamage(oppPoke.getMove1().getName(), oppPoke, aiPoke),
+                                    calculateDamage(oppPoke.getMove2().getName(), oppPoke, aiPoke),
+                                    calculateDamage(oppPoke.getMove3().getName(), oppPoke, aiPoke),
+                                    calculateDamage(oppPoke.getMove4().getName(), oppPoke, aiPoke)])
+                for i in range(0, len(damageReceivedList)):
+                    damageReceivedList[i] = min(damageReceivedList[i], aiPoke.getBattleHP())
+
+                maxDamageTaken = max(maxDamageTaken, np.max(damageReceivedList))
+
+            maxHeuristicRest += maxDamageTaken
 
         damageReceivedSwitchList = np.zeros(numRemainingAlivePokemon)
         indexInCostList = 1
@@ -153,7 +167,7 @@ class PokemonAI(object):
             
             maxDamageReceived = np.max(damageReceivedList)
             g = maxDamageReceived
-            heuristic = -currTotalHP
+            heuristic = maxHeuristicRest
             costList[indexInCostList] = g + heuristic
             indexInCostList+=1
 
@@ -204,7 +218,7 @@ class PokemonAI(object):
             damageGiveList[i] = min(damageGiveList[i], playerCurrentPokemon.getBattleHP())
         bestMoveIndex = np.argmax(damageGiveList)
         g = playerCurrentPokemon.getBattleHP() - np.max(damageGiveList)
-        heuristic = opponentsHPLeft - np.max(damageGiveList)
+        heuristic = opponentsHPLeft
         costList[0] = g + heuristic
 
         damageReceivedSwitchList = np.zeros(numRemainingAlivePokemon)
