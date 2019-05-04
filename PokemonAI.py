@@ -93,7 +93,50 @@ class PokemonAI(object):
         maxDamageReceived = np.max(damageReceivedList)
         
         g = maxDamageReceived
-        heuristic = -currTotalHP
+
+        maxHeuristicCurr = 0
+        # compute heuristic
+        for aiPoke in self.pokemons:
+            if not(aiPoke.isAlive()):
+                continue
+
+            heuristic = 0
+            for oppPoke in allPlayerPokemon:
+                if not(oppPoke.isAlive()):
+                    continue
+
+                # Calculate what is the max damage the AI can do
+                damageGiveList = np.array([calculateDamage(self.currentPokemon.getMove1().getName(), self.currentPokemon, oppPoke),
+                                calculateDamage(self.currentPokemon.getMove2().getName(), self.currentPokemon, oppPoke),
+                                calculateDamage(self.currentPokemon.getMove3().getName(), self.currentPokemon, oppPoke),
+                                calculateDamage(self.currentPokemon.getMove4().getName(), self.currentPokemon, oppPoke)])
+                maxDamageDealt = np.max(damageGiveList)
+
+                # to incentivize staying in, skip current pokemon if you can kill it
+                if oppPoke.getBattleHP() - maxDamageDealt <= 0:
+                    continue
+
+                oppMultiplierList = np.array([getMultiplier(oppPoke.getMove1().getName(), oppPoke, aiPoke),
+                                getMultiplier(oppPoke.getMove2().getName(), oppPoke, aiPoke),
+                                getMultiplier(oppPoke.getMove3().getName(), oppPoke, aiPoke),
+                                getMultiplier(oppPoke.getMove4().getName(), oppPoke, aiPoke)])
+                maxOppMultiplier = np.max(oppMultiplierList)
+
+                aiMultiplierList = np.array([getMultiplier(aiPoke.getMove1().getName(), aiPoke, oppPoke),
+                                getMultiplier(aiPoke.getMove2().getName(), aiPoke, oppPoke),
+                                getMultiplier(aiPoke.getMove3().getName(), aiPoke, oppPoke),
+                                getMultiplier(aiPoke.getMove4().getName(), aiPoke, oppPoke)])
+                maxAIMultiplier = np.max(aiMultiplierList)
+
+                diff = maxAIMultiplier - maxOppMultiplier
+                if diff >= 1.0:
+                    heuristic += 1.0
+                elif (0 >= diff and diff < 1.0):
+                    heuristic += 2.0
+                else:
+                    heuristic += 4.0
+
+            minHeuristicCurr = min(minHeuristicCurr, heuristic)
         costList[0] = g + heuristic
 
         damageReceivedSwitchList = np.zeros(numRemainingAlivePokemon)

@@ -8,8 +8,8 @@ def main():
     root.title("Pokemon Battle")
     root.geometry("670x500")
 
-    #app = Application(root)
-    app = ApplicationAutomated(root)
+    app = Application(root)
+    #app = ApplicationAutomated(root)
     root.mainloop()
 
 main()
