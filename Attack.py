@@ -47,7 +47,7 @@ def getMultiplier(move, pokemon1, pokemon2):
     move = Move(move)
 
     # This modifier is used in damage calculations; it takes into account type advantage and STAB bonus
-    modifier = 1
+    modifier = 1.0
 
     # Calculating Type advantages using "Type Advantages.csv" file
     for key in typeDic:
@@ -58,6 +58,12 @@ def getMultiplier(move, pokemon1, pokemon2):
         # Didn't use elif; Just in case you get a 4x or 0.25x modifier based on double type
         if typeDic[key][1] == move.type and typeDic[key][2] == pokemon2.type2:
             modifier *= float(typeDic[key][3])
+    
+    if move.type == pokemon1.type1:
+        modifier *= Pokemon.STAB
+
+    elif move.type == pokemon1.type2:
+        modifier *= Pokemon.STAB
 
     return modifier
 
