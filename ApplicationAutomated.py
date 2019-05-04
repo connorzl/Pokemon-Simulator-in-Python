@@ -147,8 +147,8 @@ class ApplicationAutomated(Frame):
     # Method takes the user-inputted string and plugs it into the attack function
     # Prints the result of the attack function to the center text box
     def selectMove1(self, event=None):
-        #AIAction = self.pokemonAI1.selectNextActionDefensive(self.cpuPokemon[self.cpuActive])
-        AIAction = self.pokemonAI1.selectNextActionOffensive(self.cpuPokemon[self.cpuActive], self.cpuPokemon)
+        AIAction = self.pokemonAI1.selectNextActionDefensive(self.cpuPokemon[self.cpuActive])
+        #AIAction = self.pokemonAI1.selectNextActionOffensive(self.cpuPokemon[self.cpuActive], self.cpuPokemon)
         if AIAction.actionName == "move":
             # self.txtStats.config(state=NORMAL)
             # self.txtStats.delete(0.0, END)

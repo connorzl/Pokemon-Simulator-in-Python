@@ -160,7 +160,7 @@ class PokemonAI(object):
         for i in range(0,len(damageGiveList)):
             damageGiveList[i] = min(damageGiveList[i], playerCurrentPokemon.getBattleHP())
         bestMoveIndex = np.argmax(damageGiveList)
-        g = playerCurrentPokemon.getBattleHP() - np.max(damageGiveList))
+        g = playerCurrentPokemon.getBattleHP() - np.max(damageGiveList)
         heuristic = opponentsHPLeft
         costList[0] = g + heuristic
 
